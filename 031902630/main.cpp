@@ -28,7 +28,7 @@ public:
         allMgc = s;
     }
 
-    map<char, int> sonNodes;		//子节点的下标
+    map<string, int> sonNodes;		//子节点的下标
     string allMgc;      //敏感词
 };
 TreeNode rootNode;
@@ -38,23 +38,35 @@ int nodeNum = 0;
 void createTree(string s)       //创建树
 {
     TreeNode* tempNode = &rootNode;       //临时节点
-    for (int i = 0; i < s.size(); i++)
+    for (int i = 0; i < s.size();)
     {
-        char c = s[i];
-        if (c >= 'a' && c <= 'z')
-            c -= 32;
+        string c;
+        char l = s[i];
 
-        map<char, int>::iterator iter = tempNode->sonNodes.find(c);
+        if (l < 0)       //是汉字或中文字符
+        {
+            c = s.substr(i, 3);
+            i += 3;
+        }
+        else
+        {
+            if (l >= 'a' && l <= 'z')       //是英文
+                l -= 32;
+            c = l;
+            i++;
+        }
+
+        map<string, int>::iterator iter = tempNode->sonNodes.find(c);
         if (iter == tempNode->sonNodes.end())
         {
-            tempNode->sonNodes.insert(map<char, int>::value_type(c, nodeNum));      //添加子节点
+            tempNode->sonNodes.insert(map<string, int>::value_type(c, nodeNum));      //添加子节点
             tempNode = &treeNode[nodeNum];
             nodeNum++;
         }
         else
             tempNode = &treeNode[iter->second];
 
-        if (i == s.size() - 1)
+        if (i == s.size())
         {
             tempNode->setEnd(s);
         }
@@ -71,13 +83,24 @@ void searchMgc(string s, int line)        //搜索敏感词
     {
         position = begin;
         tempNode = &rootNode;
-        char c = s[begin];
-        if (c >= 'a' && c <= 'z')
-            c -= 32;
+        string c;
+        char l = s[position];
 
-        if (c < 0)      //中文内容
+        if (l < 0)       //是汉字或中文字符
         {
-            map<char, int>::iterator iter = tempNode->sonNodes.find(c);
+            c = s.substr(position, 3);
+            position += 2;
+        }
+        else
+        {
+            if (l >= 'a' && l <= 'z')       //是英文
+                l -= 32;
+            c = l;
+        }
+
+        if (l < 0)      //中文内容
+        {
+            map<string, int>::iterator iter = tempNode->sonNodes.find(c);
             if (iter != tempNode->sonNodes.end())
             {
                 int charNum = 0;
@@ -96,13 +119,22 @@ void searchMgc(string s, int line)        //搜索敏感词
                     }
 
                     position++;
-                    char w = s[position];
-                    if (w >= 'a' && w <= 'z')
-                        w -= 32;
-
-                    if (w < 0)
+                    char w = s[position];       //下一个字
+                    if (w < 0)       //是汉字或中文字符
                     {
-                        iter = tempNode->sonNodes.find(w);
+                        c = s.substr(position, 3);
+                        position += 2;
+                    }
+                    else
+                    {
+                        if (w >= 'a' && w <= 'z')       //是英文
+                            w -= 32;
+                        c = w;
+                    }
+
+                    if (w < 0)      //中文
+                    {
+                        iter = tempNode->sonNodes.find(c);
                         if (iter != tempNode->sonNodes.end())
                         {
                             charNum = 0;
@@ -114,7 +146,7 @@ void searchMgc(string s, int line)        //搜索敏感词
                             break;
                         }
                     }
-                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z') || (w >= '0' && w <= '9'))
+                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z') || (w >= '0' && w <= '9'))        //中文中间有英文和数字
                     {
                         begin += 3;
                         break;
@@ -129,9 +161,9 @@ void searchMgc(string s, int line)        //搜索敏感词
             else
                 begin += 3;
         }
-        else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))      //英文内容
+        else if ((l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z'))      //英文内容
         {
-            map<char, int>::iterator iter = tempNode->sonNodes.find(c);
+            map<string, int>::iterator iter = tempNode->sonNodes.find(c);
             if (iter != tempNode->sonNodes.end())
             {
                 int charNum = 0;
@@ -150,18 +182,27 @@ void searchMgc(string s, int line)        //搜索敏感词
                     }
 
                     position++;
-                    char w = s[position];
-                    if (w >= 'a' && w <= 'z')
-                        w -= 32;
+                    char w = s[position];       //下一个字
+                    if (w < 0)       //是汉字或中文字符
+                    {
+                        c = s.substr(position, 3);
+                        position += 2;
+                    }
+                    else
+                    {
+                        if (w >= 'a' && w <= 'z')       //是英文
+                            w -= 32;
+                        c = w;
+                    }
 
-                    if (w < 0)
+                    if (w < 0)      //英文中间有中文
                     {
                         begin++;
                         break;
                     }
-                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z'))
+                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z'))      //英文
                     {
-                        iter = tempNode->sonNodes.find(w);
+                        iter = tempNode->sonNodes.find(c);
                         if (iter != tempNode->sonNodes.end())
                         {
                             charNum = 0;
