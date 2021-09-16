@@ -7,50 +7,108 @@
 #include<cstdlib>
 using namespace std;
 
-class Answer        //ç­”æ¡ˆç±»
+class Answer        //´ğ°¸Àà
 {
 public:
-    int Line;       //è¡Œå·
-    string Mgc;     //æ•æ„Ÿè¯
-    string Text;     //æ–‡æœ¬
+    int Line;       //ĞĞºÅ
+    string Mgc;     //Ãô¸Ğ´Ê
+    string Text;     //ÎÄ±¾
 };
-Answer answer[10000];
+Answer answer[30010];
 int ansTotal = 0;
 
-class TreeNode		//å‰ç¼€æ ‘èŠ‚ç‚¹ç±»
+class TreeNode		//Ç°×ºÊ÷½ÚµãÀà
 {
 public:
-    bool is_End = false;		//æ˜¯å¦ä¸ºç»“å°¾
+    bool is_End = false;		//ÊÇ·ñÎª½áÎ²
 
-    void setEnd(string s)       //è®¾ç½®ä¸ºç»“å°¾
+    void setEnd(string s)       //ÉèÖÃÎª½áÎ²
     {
         is_End = true;
         allMgc = s;
     }
 
-    map<string, int> sonNodes;		//å­èŠ‚ç‚¹çš„ä¸‹æ ‡
-    string allMgc;      //æ•æ„Ÿè¯
+    map<string, int> sonNodes;		//×Ó½ÚµãµÄÏÂ±ê
+    string allMgc;      //Ãô¸Ğ´Ê
 };
 TreeNode rootNode;
-TreeNode treeNode[3000];
+TreeNode treeNode[10010];
 int nodeNum = 0;
 
-void createTree(string s)       //åˆ›å»ºæ ‘
+map<string, string> splitWord;      //ºº×Ö²ğ·ÖÎªÆ«ÅÔ²¿Ê×
+void readDictionary()    //¶ÁÈë×Öµä
 {
-    TreeNode* tempNode = &rootNode;       //ä¸´æ—¶èŠ‚ç‚¹
+    string s;
+    ifstream inDictionary;
+    inDictionary.open("Dictionary.txt");
+    if (!inDictionary.is_open())
+        cout << "can not open Dictionary.txt" << endl;
+
+    string beforeSplit;     //²ğ·ÖÇ°Ô­×Ö
+    string afterSplit;      //²ğ·ÖºóÆ«ÅÔ²¿Ê×
+    int begin = 0;;
+    int position = 0;
+
+    while (getline(inDictionary, s))
+    {
+        begin = 0;
+        position = 0;
+        for (; position < s.size(); position++)
+        {
+            if (s[position] == 34)       //¶Áµ½µÚÒ»¸öÇ°"
+            {
+                begin = position + 1;
+                for (position++; position < s.size(); position++)
+                {
+                    if (s[position] == 34)      //¶Áµ½µÚÒ»¸öºó"
+                    {
+                        beforeSplit = s.substr(begin, position - begin);
+                        break;
+                    }
+                }
+
+                for (position++; position < s.size(); position++)
+                {
+                    if (s[position] == 34)      //¶Áµ½µÚ¶ş¸öÇ°"
+                    {
+                        begin = position + 1;
+                        for (position++; position < s.size(); position++)
+                        {
+                            if (s[position] == 34)      //¶Áµ½µÚ¶ş¸öºó"
+                            {
+                                afterSplit = s.substr(begin, position - begin);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                splitWord.insert(map<string, string>::value_type(beforeSplit, afterSplit));     //²åÈë¶ÔÓ¦¹ØÏµ
+                break;
+            }
+        }
+    }
+
+    inDictionary.close();
+}
+
+void createTree(string s)       //´´½¨Ê÷
+{
+    TreeNode* tempNode = &rootNode;       //ÁÙÊ±½Úµã
     for (int i = 0; i < s.size();)
     {
         string c;
         char l = s[i];
 
-        if (l < 0)       //æ˜¯æ±‰å­—æˆ–ä¸­æ–‡å­—ç¬¦
+        if (l < 0)       //ÊÇºº×Ö»òÖĞÎÄ×Ö·û
         {
             c = s.substr(i, 3);
             i += 3;
         }
         else
         {
-            if (l >= 'a' && l <= 'z')       //æ˜¯è‹±æ–‡
+            if (l >= 'a' && l <= 'z')       //ÊÇÓ¢ÎÄ
                 l -= 32;
             c = l;
             i++;
@@ -59,9 +117,32 @@ void createTree(string s)       //åˆ›å»ºæ ‘
         map<string, int>::iterator iter = tempNode->sonNodes.find(c);
         if (iter == tempNode->sonNodes.end())
         {
-            tempNode->sonNodes.insert(map<string, int>::value_type(c, nodeNum));      //æ·»åŠ å­èŠ‚ç‚¹
-            tempNode = &treeNode[nodeNum];
+            tempNode->sonNodes.insert(map<string, int>::value_type(c, nodeNum));      //Ìí¼Ó×Ó½Úµã
+            int keepNum = nodeNum;      //±£´æ×îÖÕÏÂ±ê
             nodeNum++;
+
+            map<string, string>::iterator iterNew = splitWord.find(c);
+            if (iterNew != splitWord.end())     //ÔÚ×ÖµäÖĞÕÒµ½ÁË²ğ·Ö·½Ê½
+            {
+                string afterSplit = iterNew->second;
+                for (int i = 0; i < afterSplit.size();)     //Ìí¼ÓÁíÒ»ÌõÂ·¾¶
+                {
+                    string single;      //µ¥¸öºº×Ö£¨Æ«ÅÔ²¿Ê×£©
+                    single = afterSplit.substr(i, 3);
+
+                    i += 3;     //ÏÂÒ»²åÈë²¿·Ö
+                    if (i < afterSplit.size())      //ÏÂÒ»²¿·Ö²»ÊÇ×îºóÒ»²¿·Ö
+                    {
+                        tempNode->sonNodes.insert(map<string, int>::value_type(single, nodeNum));
+                        tempNode = &treeNode[nodeNum];
+                        nodeNum++;
+                    }
+                    else
+                        tempNode->sonNodes.insert(map<string, int>::value_type(single, keepNum));
+                }
+            }
+
+            tempNode = &treeNode[keepNum];
         }
         else
             tempNode = &treeNode[iter->second];
@@ -73,11 +154,11 @@ void createTree(string s)       //åˆ›å»ºæ ‘
     }
 }
 
-void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
+void searchMgc(string s, int line)        //ËÑË÷Ãô¸Ğ´Ê
 {
-    TreeNode* tempNode = &rootNode;     //ä¸´æ—¶èŠ‚ç‚¹
-    int begin = 0;      //å¼€å§‹ä½ç½®
-    int position = 0;       //å½“å‰ä½ç½®
+    TreeNode* tempNode = &rootNode;     //ÁÙÊ±½Úµã
+    int begin = 0;      //¿ªÊ¼Î»ÖÃ
+    int position = 0;       //µ±Ç°Î»ÖÃ
 
     for (; begin < s.size();)
     {
@@ -86,19 +167,19 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
         string c;
         char l = s[position];
 
-        if (l < 0)       //æ˜¯æ±‰å­—æˆ–ä¸­æ–‡å­—ç¬¦
+        if (l < 0)       //ÊÇºº×Ö»òÖĞÎÄ×Ö·û
         {
             c = s.substr(position, 3);
             position += 2;
         }
         else
         {
-            if (l >= 'a' && l <= 'z')       //æ˜¯è‹±æ–‡
+            if (l >= 'a' && l <= 'z')       //ÊÇÓ¢ÎÄ
                 l -= 32;
             c = l;
         }
 
-        if (l < 0)      //ä¸­æ–‡å†…å®¹
+        if (l < 0)      //ÖĞÎÄÄÚÈİ
         {
             map<string, int>::iterator iter = tempNode->sonNodes.find(c);
             if (iter != tempNode->sonNodes.end())
@@ -108,7 +189,7 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
 
                 for (charNum = 0; charNum < 20;)
                 {
-                    if (tempNode->is_End == true)       //åŒ¹é…æˆåŠŸ
+                    if (tempNode->is_End == true)       //Æ¥Åä³É¹¦
                     {
                         answer[ansTotal].Line = line;
                         answer[ansTotal].Mgc = tempNode->allMgc;
@@ -119,20 +200,20 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
                     }
 
                     position++;
-                    char w = s[position];       //ä¸‹ä¸€ä¸ªå­—
-                    if (w < 0)       //æ˜¯æ±‰å­—æˆ–ä¸­æ–‡å­—ç¬¦
+                    char w = s[position];       //ÏÂÒ»¸ö×Ö
+                    if (w < 0)       //ÊÇºº×Ö»òÖĞÎÄ×Ö·û
                     {
                         c = s.substr(position, 3);
                         position += 2;
                     }
                     else
                     {
-                        if (w >= 'a' && w <= 'z')       //æ˜¯è‹±æ–‡
+                        if (w >= 'a' && w <= 'z')       //ÊÇÓ¢ÎÄ
                             w -= 32;
                         c = w;
                     }
 
-                    if (w < 0)      //ä¸­æ–‡
+                    if (w < 0)      //ÖĞÎÄ
                     {
                         iter = tempNode->sonNodes.find(c);
                         if (iter != tempNode->sonNodes.end())
@@ -146,7 +227,7 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
                             break;
                         }
                     }
-                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z') || (w >= '0' && w <= '9'))        //ä¸­æ–‡ä¸­é—´æœ‰è‹±æ–‡å’Œæ•°å­—
+                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z') || (w >= '0' && w <= '9'))        //ÖĞÎÄÖĞ¼äÓĞÓ¢ÎÄºÍÊı×Ö
                     {
                         begin += 3;
                         break;
@@ -161,7 +242,7 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
             else
                 begin += 3;
         }
-        else if ((l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z'))      //è‹±æ–‡å†…å®¹
+        else if ((l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z'))      //Ó¢ÎÄÄÚÈİ
         {
             map<string, int>::iterator iter = tempNode->sonNodes.find(c);
             if (iter != tempNode->sonNodes.end())
@@ -171,7 +252,7 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
                 
                 for (charNum = 0; charNum < 20;)
                 {
-                    if (tempNode->is_End == true)       //åŒ¹é…æˆåŠŸ
+                    if (tempNode->is_End == true)       //Æ¥Åä³É¹¦
                     {
                         answer[ansTotal].Line = line;
                         answer[ansTotal].Mgc = tempNode->allMgc;
@@ -182,25 +263,25 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
                     }
 
                     position++;
-                    char w = s[position];       //ä¸‹ä¸€ä¸ªå­—
-                    if (w < 0)       //æ˜¯æ±‰å­—æˆ–ä¸­æ–‡å­—ç¬¦
+                    char w = s[position];       //ÏÂÒ»¸ö×Ö
+                    if (w < 0)       //ÊÇºº×Ö»òÖĞÎÄ×Ö·û
                     {
                         c = s.substr(position, 3);
                         position += 2;
                     }
                     else
                     {
-                        if (w >= 'a' && w <= 'z')       //æ˜¯è‹±æ–‡
+                        if (w >= 'a' && w <= 'z')       //ÊÇÓ¢ÎÄ
                             w -= 32;
                         c = w;
                     }
 
-                    if (w < 0)      //è‹±æ–‡ä¸­é—´æœ‰ä¸­æ–‡
+                    if (w < 0)      //Ó¢ÎÄÖĞ¼äÓĞÖĞÎÄ
                     {
                         begin++;
                         break;
                     }
-                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z'))      //è‹±æ–‡
+                    else if ((w >= 'a' && w <= 'z') || (w >= 'A' && w <= 'Z'))      //Ó¢ÎÄ
                     {
                         iter = tempNode->sonNodes.find(c);
                         if (iter != tempNode->sonNodes.end())
@@ -224,46 +305,51 @@ void searchMgc(string s, int line)        //æœç´¢æ•æ„Ÿè¯
             else
                 begin++;
         }
-        else        //å­—ç¬¦å†…å®¹
+        else        //×Ö·ûÄÚÈİ
             begin++;
     }
 }
 
-void readMgc()    //è¯»å…¥æ•æ„Ÿè¯
+void readMgc()      //void readMgc(char* words)    //¶ÁÈëÃô¸Ğ´Ê
 {
     string s;
-    ifstream inMgc("words.txt");
+    ifstream inMgc;
+    inMgc.open("words.txt");        //    inMgc.open(words);
     if (!inMgc.is_open())
         cout << "can not open words.txt" << endl;
 
     while (inMgc >> s)
     {
-        createTree(s);      //åˆ›å»ºæ ‘
+        createTree(s);      //´´½¨Ê÷
     }
 
     inMgc.close();
 }
 
-void readFile()		//è¯»å…¥å¾…æ£€æµ‹æ–‡æœ¬
+void readFile()     //void readFile(char* org)		//¶ÁÈë´ı¼ì²âÎÄ±¾
 {
     string s;
     int line = 1;
-    ifstream inFile("org.txt");
+    ifstream inFile;
+    inFile.open("org.txt");     //    inFile.open(org);
     if (!inFile.is_open())
         cout << "can not open org.txt" << endl;
 
     while (getline(inFile, s))
     {
-        searchMgc(s, line);       //æœç´¢æ•æ„Ÿè¯
+        searchMgc(s, line);       //ËÑË÷Ãô¸Ğ´Ê
         line++;
     }
 
     inFile.close();
 }
 
-void writeFile()		//è¾“å‡ºç­”æ¡ˆ
+void writeFile()        //void writeFile(char* ans)		//Êä³ö´ğ°¸
 {
-    ofstream outFile("ans.txt", ios::trunc);
+    ofstream outFile;
+    outFile.open("ans.txt");        //    outFile.open(ans);
+    if (!outFile.is_open())
+        cout << "can not open ans.txt" << endl;
 
     outFile << "Total: " << ansTotal << endl;
     for (int i = 0; i < ansTotal; i++)
@@ -274,15 +360,17 @@ void writeFile()		//è¾“å‡ºç­”æ¡ˆ
     outFile.close();
 }
 
-int main()
+int main()        //int main(int argc, char* argv[])
 {
-    SetConsoleOutputCP(65001);		//å°†cmdè®¾ç½®ä¸ºutf-8ç¼–ç 
+    SetConsoleOutputCP(65001);		//½«cmdÉèÖÃÎªutf-8±àÂë
 
-    readMgc();
+    readDictionary();
 
-    readFile();
+    readMgc();       //    readMgc(argv[1]);
 
-    writeFile();
+    readFile();     //    readFile(argv[2]);
+
+    writeFile();        //    writeFile(argv[3]);
 
     return 0;
 }
