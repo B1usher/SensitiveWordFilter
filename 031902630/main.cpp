@@ -14,7 +14,7 @@ public:
     string Mgc;     //敏感词
     string Text;     //文本
 };
-Answer answer[10000];
+Answer answer[30010];
 int ansTotal = 0;
 
 class TreeNode		//前缀树节点类
@@ -32,8 +32,66 @@ public:
     string allMgc;      //敏感词
 };
 TreeNode rootNode;
-TreeNode treeNode[3000];
+TreeNode treeNode[10010];
 int nodeNum = 0;
+
+map<string, string> splitWord;      //汉字拆分为偏旁部首
+void readDictionary()    //读入字典
+{
+    string s;
+    ifstream inDictionary;
+    inDictionary.open("Dictionary.txt");
+    if (!inDictionary.is_open())
+        cout << "can not open Dictionary.txt" << endl;
+
+    string beforeSplit;     //拆分前原字
+    string afterSplit;      //拆分后偏旁部首
+    int begin = 0;;
+    int position = 0;
+
+    while (getline(inDictionary, s))
+    {
+        begin = 0;
+        position = 0;
+        for (; position < s.size(); position++)
+        {
+            if (s[position] == 34)       //读到第一个前"
+            {
+                begin = position + 1;
+                for (position++; position < s.size(); position++)
+                {
+                    if (s[position] == 34)      //读到第一个后"
+                    {
+                        beforeSplit = s.substr(begin, position - begin);
+                        break;
+                    }
+                }
+
+                for (position++; position < s.size(); position++)
+                {
+                    if (s[position] == 34)      //读到第二个前"
+                    {
+                        begin = position + 1;
+                        for (position++; position < s.size(); position++)
+                        {
+                            if (s[position] == 34)      //读到第二个后"
+                            {
+                                afterSplit = s.substr(begin, position - begin);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                splitWord.insert(map<string, string>::value_type(beforeSplit, afterSplit));     //插入对应关系
+                break;
+            }
+        }
+    }
+
+    inDictionary.close();
+}
 
 void createTree(string s)       //创建树
 {
@@ -60,8 +118,31 @@ void createTree(string s)       //创建树
         if (iter == tempNode->sonNodes.end())
         {
             tempNode->sonNodes.insert(map<string, int>::value_type(c, nodeNum));      //添加子节点
-            tempNode = &treeNode[nodeNum];
+            int keepNum = nodeNum;      //保存最终下标
             nodeNum++;
+
+            map<string, string>::iterator iterNew = splitWord.find(c);
+            if (iterNew != splitWord.end())     //在字典中找到了拆分方式
+            {
+                string afterSplit = iterNew->second;
+                for (int i = 0; i < afterSplit.size();)     //添加另一条路径
+                {
+                    string single;      //单个汉字（偏旁部首）
+                    single = afterSplit.substr(i, 3);
+
+                    i += 3;     //下一插入部分
+                    if (i < afterSplit.size())      //下一部分不是最后一部分
+                    {
+                        tempNode->sonNodes.insert(map<string, int>::value_type(single, nodeNum));
+                        tempNode = &treeNode[nodeNum];
+                        nodeNum++;
+                    }
+                    else
+                        tempNode->sonNodes.insert(map<string, int>::value_type(single, keepNum));
+                }
+            }
+
+            tempNode = &treeNode[keepNum];
         }
         else
             tempNode = &treeNode[iter->second];
@@ -229,11 +310,11 @@ void searchMgc(string s, int line)        //搜索敏感词
     }
 }
 
-void readMgc(char* words)    //读入敏感词
+void readMgc(char* words)    //读入敏感词        //void readMgc()      //
 {
     string s;
     ifstream inMgc;
-    inMgc.open(words);
+    inMgc.open(words);      //    inMgc.open("words.txt");        //
     if (!inMgc.is_open())
         cout << "can not open words.txt" << endl;
 
@@ -245,12 +326,12 @@ void readMgc(char* words)    //读入敏感词
     inMgc.close();
 }
 
-void readFile(char* org)		//读入待检测文本
+void readFile(char* org)		//读入待检测文本       //void readFile()     //
 {
     string s;
     int line = 1;
     ifstream inFile;
-    inFile.open(org);
+    inFile.open(org);       //    inFile.open("org.txt");     //
     if (!inFile.is_open())
         cout << "can not open org.txt" << endl;
 
@@ -263,10 +344,10 @@ void readFile(char* org)		//读入待检测文本
     inFile.close();
 }
 
-void writeFile(char* ans)		//输出答案
+void writeFile(char* ans)		//输出答案      //void writeFile()        //
 {
     ofstream outFile;
-    outFile.open(ans);
+    outFile.open(ans);      //    outFile.open("ans.txt");        //
     if (!outFile.is_open())
         cout << "can not open ans.txt" << endl;
 
@@ -279,15 +360,17 @@ void writeFile(char* ans)		//输出答案
     outFile.close();
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[])        //int main()        //
 {
     SetConsoleOutputCP(65001);		//将cmd设置为utf-8编码
 
-    readMgc(argv[1]);
+    readDictionary();
 
-    readFile(argv[2]);
+    readMgc(argv[1]);       //    readMgc();       //
 
-    writeFile(argv[3]);
+    readFile(argv[2]);      //    readFile();     //
+
+    writeFile(argv[3]);     //    writeFile();        //
 
     return 0;
 }
