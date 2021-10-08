@@ -36,11 +36,11 @@ TreeNode treeNode[10010];
 int nodeNum = 0;
 
 map<string, string> splitWord;      //汉字拆分为偏旁部首
-void readDictionary()    //读入字典
+void readDictionary(string words)    //读入字典
 {
     string s;
     ifstream inDictionary;
-    inDictionary.open("Dictionary.txt");
+    inDictionary.open(words);
     if (!inDictionary.is_open())
         cout << "can not open Dictionary.txt" << endl;
 
@@ -310,11 +310,11 @@ void searchMgc(string s, int line)        //搜索敏感词
     }
 }
 
-void readMgc(char* words)    //读入敏感词        //void readMgc()      //
+void readMgc(char* words)    //读入敏感词    void readMgc()      //
 {
     string s;
     ifstream inMgc;
-    inMgc.open(words);      //    inMgc.open("words.txt");        //
+    inMgc.open(words);  //    inMgc.open("words.txt");        //
     if (!inMgc.is_open())
         cout << "can not open words.txt" << endl;
 
@@ -326,12 +326,12 @@ void readMgc(char* words)    //读入敏感词        //void readMgc()      //
     inMgc.close();
 }
 
-void readFile(char* org)		//读入待检测文本       //void readFile()     //
+void readFile(char* org)		//读入待检测文本   void readFile()     //
 {
     string s;
     int line = 1;
     ifstream inFile;
-    inFile.open(org);       //    inFile.open("org.txt");     //
+    inFile.open(org);   //    inFile.open("org.txt");     //
     if (!inFile.is_open())
         cout << "can not open org.txt" << endl;
 
@@ -344,10 +344,10 @@ void readFile(char* org)		//读入待检测文本       //void readFile()     //
     inFile.close();
 }
 
-void writeFile(char* ans)		//输出答案      //void writeFile()        //
+void writeFile(char* ans)		//输出答案  void writeFile()        //
 {
     ofstream outFile;
-    outFile.open(ans);      //    outFile.open("ans.txt");        //
+    outFile.open(ans);  //    outFile.open("ans.txt");        //
     if (!outFile.is_open())
         cout << "can not open ans.txt" << endl;
 
@@ -360,17 +360,21 @@ void writeFile(char* ans)		//输出答案      //void writeFile()        //
     outFile.close();
 }
 
-int main(int argc, char* argv[])        //int main()        //
+int main(int argc, char* argv[])    //int main()        //
 {
     SetConsoleOutputCP(65001);		//将cmd设置为utf-8编码
 
-    readDictionary();
+    string address = argv[0];       //通过修改main.exe的地址得到Dictionary.txt的地址
+    int position = address.rfind("main.exe");
+    address.replace(position, 8, "Dictionary.txt");
+    
+    readDictionary(address);
 
-    readMgc(argv[1]);       //    readMgc();       //
+    readMgc(argv[1]);   //    readMgc();       //
 
-    readFile(argv[2]);      //    readFile();     //
+    readFile(argv[2]);  //    readFile();     //
 
-    writeFile(argv[3]);     //    writeFile();        //
+    writeFile(argv[3]); //    writeFile();        //
 
     return 0;
 }
