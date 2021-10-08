@@ -366,9 +366,27 @@ int main(int argc, char* argv[])    //int main()        //
 
     string address = argv[0];       //通过修改main.exe的地址得到Dictionary.txt的地址
     int position = address.rfind("main.exe");
-    address.replace(position, 8, "Dictionary.txt");
+
+    //cout << address << endl;
+
+    if (position == -1)
+    {
+        int position = address.rfind("SensitiveWordFilter.exe");
+        address.replace(position, 23, "Dictionary.txt");
+    }
+    else
+        address.replace(position, 8, "Dictionary.txt");
+
+    //cout << address << endl;
     
     readDictionary(address);
+
+    /*
+    for (int i = 0; i < argc; i++)
+    {
+        cout << "argv[" << i << "]:" << argv[i] << endl;
+    }
+    */
 
     readMgc(argv[1]);   //    readMgc();       //
 
